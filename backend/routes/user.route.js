@@ -1,51 +1,55 @@
-const Router=require("express");
-const bcrypt=require("bcrypt");
-const jwt=require("jsonwebtoken");
-const { error } = require("console");
-const { userModel } = require("../models/user.model");
-require("dotenv").config();
+const express = require("express");
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+const User = require("../models/user.model");
+const authenticate = require("../middleware/authentication");
+const router = express.Router();
 
-const userController=Router();
+// User registration route
+router.post("/signup", async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+    const hashedPassword = await bcrypt.hash(password, 10);
+    await User.create({ name, email, password: hashedPassword });
+    res.status(201).json({ message: "User registered successfully" });
+  } catch (error) {
+    console.error("Registration error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
 
-// signup 
-userController.post("/signup",async(req,res)=>{
-    const {name,email,password}=req.body;
-    bcrypt.hash(password,7,async(error,hash)=>{
-        if(error){
-            res.send("something went wrong, please try again");
-        }
-        const user=new userModel({
-            name,
-            email,
-            password:hash
-        })
-        try{
-            await user.save()
-            res.json({message:"signup successfully"})
-        }catch(err){
-            console.log(err);
-            res.json({message:"something went wrong,please try again"})
-        }
-    })
-})
+// User login route
+router.post("/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+    const passwordMatch = await bcrypt.compare(password, user.password);
+    if (!passwordMatch) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    res.json({ token });
+  } catch (error) {
+    console.error("Login error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
 
-// login
-userController.post("/login",async(req,res)=>{
-    const {email,password}=req.body;
-    const user=await userModel.findOne({email})
-    const hash=user.password;
+// User profile route
+router.get("/profile", authenticate, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    res.json(user);
+  } catch (error) {
+    console.error("Profile error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
 
-    bcrypt.compare(password,hash,function(error,result){
-        if(error){
-            res.json({message:"something went wrong"})
-        }if(result){
-            const token=jwt.sign({userId:user._id},process.env.JWT_SECRET);
-            res.json({message:"Login successfull",token})
-        }else{
-            res.json({message:"invalid credentials"})
-        }
-    })
-})
-
-
-module.exports={userController};
+module.exports = router;

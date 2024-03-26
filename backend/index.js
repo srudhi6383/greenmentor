@@ -1,27 +1,25 @@
-const express=require("express");
-const { connection } = require("./config/db");
-const { userController } = require("./routes/user.route");
-const { authentication } = require("./middlewares/authentication");
-const app=express();
+const express = require("express");
+const connectDB = require("./config/db");
+const userRoutes = require("./routes/user.route");
 
+const app = express();
+const PORT = process.env.PORT || 8000;
+
+// Connect to MongoDB
+connectDB();
+
+// Middleware
 app.use(express.json());
 
-app.get("/",(req,res)=>{
-    res.send("welcome to greenmentor Api");
-})
+// Routes
+app.use("/user", userRoutes);
 
-app.use("/user",userController);
-app.use(authentication)
+// Default route
+app.get("/", (req, res) => {
+  res.send("Welcome to the task management app");
+});
 
-app.listen(8000, async()=>{
-    try{
-        await connection;
-        console.log("connected to mongoDB !")
-
-    }
-    catch(error){
-        console.log(error)
-        console.log("error while connecting to mongoDB")
-    }
-    console.log("listening on port 8000");
-})
+// Start server
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});

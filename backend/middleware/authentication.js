@@ -1,20 +1,18 @@
-const jwt = require("jsonwebtoken");
-require("dotenv").config();
+const jwt = require('jsonwebtoken');
 
-const authentication = (req, res, next) => {
-  if (!req.headers.authorization) {
-    return res.json({ msg: "please login first" });
-  }
-  const token = req.headers.authorization.split(" ")[1];
-  jwt.verify(token, process.env.JWT_SECRET, function (error, decoded) {
-    if (error) {
-      console.log(error);
-    } else {
-      req.body.userId = decoded.userId;
-      next();
+const authenticate = (req, res, next) => {
+    const token = req.headers.authorization;
+    if (!token) {
+        return res.status(401).json({ message: "Authorization token is required" });
     }
-  });
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        req.userId = decoded.userId;
+        next();
+    } catch (error) {
+        console.error("Authentication error:", error);
+        return res.status(401).json({ message: "Invalid token" });
+    }
 };
 
-
-module.exports={authentication}
+module.exports = authenticate;
