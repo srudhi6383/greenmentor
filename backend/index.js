@@ -1,25 +1,29 @@
 const express = require("express");
-const connectDB = require("./config/db");
-const userRoutes = require("./routes/user.route");
+const cookieParser = require("cookie-parser");
+const cors = require("cors");
+const { userRouter } = require("./routes/user.router");
+const { connection } = require("./config/db");
+const { taskrouter } = require("./routes/task.router");
+require("dotenv").config();
 
 const app = express();
-const PORT = process.env.PORT || 8000;
-
-// Connect to MongoDB
-connectDB();
-
-// Middleware
+app.use(cookieParser());
+app.use(cors());
 app.use(express.json());
 
-// Routes
-app.use("/user", userRoutes);
-
-// Default route
+app.use("/users", userRouter);
+app.use("/api", taskrouter);
 app.get("/", (req, res) => {
-  res.send("Welcome to the task management app");
+  res.json("Welcome ! greenmentor Api");
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+app.listen(process.env.PORT || 8000, async () => {
+  try {
+    await connection;
+    console.log(`Running PORT ${process.env.PORT}`);
+    console.log("connected to DB");
+  } catch (err) {
+    console.log(err);
+    console.log("something went wrong");
+  }
 });
