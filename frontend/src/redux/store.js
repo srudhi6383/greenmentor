@@ -1,8 +1,11 @@
-import {legacy_createStore as createStore,combineReducers,applyMiddleware} from "redux"
-import {reducer as userReducer} from "./user/reducer"
-import {reducer as taskReducer} from "./task/reducer"
-import {thunk} from "redux-thunk"
-import profileReducer from "./userProfile/profileReducer"
-const rootreducer=combineReducers({userReducer,taskReducer,profileReducer})
-const store=createStore(rootreducer,applyMiddleware(thunk))
-export {store}
+import { legacy_createStore, applyMiddleware, combineReducers } from 'redux';
+import {thunk} from 'redux-thunk';
+import { loginReducer } from './Login/reducer';
+import { signupReducer } from './Register/reducer';
+import { taskReducer} from './Task/reducer'
+
+const rootReducer = combineReducers({loginReducer,signupReducer,taskReducer});
+
+const store = legacy_createStore(rootReducer, applyMiddleware(thunk));
+
+export default store;

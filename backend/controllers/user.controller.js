@@ -1,140 +1,57 @@
-const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
-const { UserModel } = require("../model/user.model");
-const { UserProfileModel } = require("../model/Profile.modle");
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 
-const registerController = {
-  registerUser: async (req, res) => {
-    const { email, password ,name} = req.body;
+const User = require('../models/User.model');
 
-    try {
-      let userExist = await UserModel.findOne({ email });
+require("dotenv").config()
 
-      if (userExist) {
-        return res.status(400).json({
-          msg: "email already exists, please login or signup with another email",
-          state: true,
-        });
-      }
+const register = async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
 
-      bcrypt.hash(password, 5, async (err, hash) => {
-        if (err) {
-          return res.status(400).json({ error: err.message });
-        }
-
-        if (
-          !/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[^a-zA-Z0-9])(?!.*\s).{8,15}$/.test(
-            password
-          )
-        ) {
-          return res.status(400).json({
-            msg: "Password should contain at least one lowercase letter, one uppercase letter, one numeric digit, and one special character, and minimum length should be 8!",
-          });
-        }
-
-        const user = new UserModel({
-          email,
-          name,
-          password: hash,
-        });
-
-        try {
-          await user.save();
-          const userProfile = new UserProfileModel({
-            userId: user._id,
-            email,name
-          });
-
-          await userProfile.save()
-          res.json({ msg: "New user registered" });
-        } catch (saveError) {
-          if (saveError.code === 11000) {
-            return res.status(400).json({
-              msg: "email is already registered. Please use a different email.",
-            });
-          }
-          console.log(saveError);
-          return res.status(500).json({ msg: "Internal server error" });
-        }
-      });
-    } catch (error) {
-      console.log(error);
-      res.status(500).json({ msg: "Internal server error" });
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: 'User already exists' });
     }
-  },
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const newUser = new User({
+      name,
+      email,
+      password: hashedPassword,
+    });
+
+    await newUser.save();
+
+    res.status(201).json({ message: 'User registered successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
 };
 
-const loginController = {
-  loginUser: async (req, res) => {
-    let { email, password } = req.body;
-    email = email.toLowerCase();
-    if (email && password) {
-      try {
-        const user = await UserModel.findOne({ email });
-        if (user) {
-          bcrypt.compare(password, user.password, (err, result) => {
-            if (result) {
-              const accessToken = jwt.sign(
-                { userId: user._id },
-                process.env.SECRET,
-                { expiresIn: "1d" } //expire after 1 day
-              );
+const login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
 
-              const refreshToken = jwt.sign(
-                { userId: user._id },
-                process.env.REFRESHSECRET,
-                { expiresIn: "7d" } // Set the expiry time for refresh token, e.g., 7 days
-              );
-
-              res.cookie("refreshToken", refreshToken, {
-                httpOnly: true,
-                maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
-              });
-
-              res.cookie("accessToken", accessToken, {
-                httpOnly: true,
-                maxAge: 1 * 60 * 60 * 1000, // 1 hour in milliseconds
-              });
-
-              token = accessToken;
-              res.status(200).json({
-                msg: "Logged In!",
-                token,
-                refreshToken,
-                user: user.userId,
-              });
-            } else {
-              res.status(400).json({ msg: "Wrong Credentials" });
-            }
-          });
-        } else {
-          res.status(400).json({
-            msg: "User does not exist. Please Register first",
-            newuser: true,
-          });
-        }
-      } catch (err) {
-        res.status(400).json({ msg: err.message });
-      }
-    } else {
-      res
-        .status(404)
-        .json({ msg: `Please enter - ${!email ? "email" : "password"}` });
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(401).json({ message: 'Invalid credentials' });
     }
-  },
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET);
+
+    res.status(200).json({ token, name:user.name});
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
 };
 
-const logoutController = {
-  logoutUser: (req, res) => {
-    res.clearCookie("accessToken");
-    res.clearCookie("refreshToken");
-    res.json({ msg: "Logged out successfully" });
-  },
-};
-
-module.exports = {
-  registerController,
-  loginController,
-  logoutController,
-  
-};
+module.exports = {register,login}

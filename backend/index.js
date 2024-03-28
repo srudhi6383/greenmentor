@@ -1,29 +1,34 @@
-const express = require("express");
-const cookieParser = require("cookie-parser");
-const cors = require("cors");
-const { userRouter } = require("./routes/user.router");
-const { connection } = require("./config/db");
-const { taskrouter } = require("./routes/task.router");
-require("dotenv").config();
+const express = require('express');
+const cors = require('cors');
+
+const connection=require("./config/db")
+const authrouter = require('./routes/user.route');
+const auth = require('./middlewares/auth.middleware');
+const taskrouter = require('./routes/task.route');
+
+require("dotenv").config()
 
 const app = express();
-app.use(cookieParser());
+
 app.use(cors());
 app.use(express.json());
 
-app.use("/users", userRouter);
-app.use("/api", taskrouter);
-app.get("/", (req, res) => {
-  res.json("Welcome ! greenmentor Api");
-});
+app.use('/auth', authrouter);
+app.use('/task', auth, taskrouter);
 
-app.listen(process.env.PORT || 8000, async () => {
-  try {
-    await connection;
-    console.log(`Running PORT ${process.env.PORT}`);
-    console.log("connected to DB");
-  } catch (err) {
-    console.log(err);
-    console.log("something went wrong");
-  }
+const PORT = process.env.PORT ;
+
+app.listen(PORT, async () => {
+    try {
+        await connection;
+
+        console.log(`Server is running on port ${PORT}`);
+        console.log("Connected to mongodb")
+        
+    } catch (error) {
+
+        console.log("error connecting to db")
+        console.log(error)
+
+    }
 });
