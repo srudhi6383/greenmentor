@@ -50,10 +50,10 @@
 ![Signup Page](/frontend/src/images/2.png)
 
 **Profile**
-![Profile](/frontend/src/images/3.png)
+![Profile](/frontend/src/images/4.png)
 
 **Task Create Modal**
-![Task Create Modal](/frontend/src/images/4.png)
+![Task Create Modal](/frontend/src/images/3.png)
 
 **Task Update Modal**
 ![Task Update Modal](/frontend/src/images/5.png)
