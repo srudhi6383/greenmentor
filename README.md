@@ -6,7 +6,7 @@ This project aims to develop a comprehensive Task Management application using R
 
 ## Deployed Link
 
-**Frontend** 
+**Frontend** https://benevolent-gecko-701242.netlify.app/
 
 **Backend** https://greenmentor-backend-69my.onrender.com/
 
