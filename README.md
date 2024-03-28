@@ -1,4 +1,4 @@
-# greenmentor
+# GREENMENTOR TASK MANAGEMENT APP
 
 ## Deployed Link
 
